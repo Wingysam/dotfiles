@@ -20,10 +20,13 @@ TRAPALRM() {
 	zle && zle reset-prompt
 }
 
-if [ $USER != 'wingy' ]; then
+if [ $USER = 'wingy' ]; then
+	PROMPT_COLOR='green'
+else
 	PROMPT_USER="$USER@"
+	PROMPT_COLOR='red'
 fi
-PROMPT='%t %F{green}$PROMPT_USER%m%f %F{cyan}%~%f %# '
+PROMPT='%t %F{$PROMPT_COLOR}$PROMPT_USER%m%f %F{cyan}%~%f %# '
 
 # Set up my history to never lose anything and to be searchable with `hstr`
 export HISTSIZE=1000000000
