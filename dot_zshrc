@@ -1,0 +1,36 @@
+if [ -f ~/.zsh_aliases ]; then
+	. ~/.zsh_aliases
+fi
+
+# Can't use my work aliases at home (unless I recreate them on my own time)
+if [ -f ~/.zsh_aliases_work ]; then
+	. ~/.zsh_aliases_work
+fi
+
+# Configure my prompt; I prefer a simple prompt that shows the following:
+# - The time (updated in real-time)
+# - The user (if not `wingy`, like if I'm root)
+# - What host I'm working in
+# - The current directory
+setopt PROMPT_SUBST
+TMOUT=1
+TRAPALRM() {
+	# We want to make sure widgets are active.
+	# You can't reset the prompt while there is no prompt because a command is running.
+	zle && zle reset-prompt
+}
+
+if [ $USER != 'wingy' ]; then
+	PROMPT_USER="$USER@"
+fi
+PROMPT='%t %F{green}$PROMPT_USER%m%f %F{cyan}%~%f %# '
+
+# Set up my history to never lose anything and to be searchable with `hstr`
+export HISTSIZE=1000000000
+export SAVEHIST=1000000000
+setopt EXTENDED_HISTORY
+
+setopt histignorespace                # skip cmds w/ leading space from history
+export HSTR_CONFIG=hicolor            # get more colors
+bindkey -s "\C-r" "\C-a hstr -- \C-j" # bind hstr to ^R
+export HSTR_TIOCSTI=y                 # TIOCSTI is an ioctl, a tool that lets hstr write to the terminal as if the user typed it

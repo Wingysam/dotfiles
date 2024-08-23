@@ -1,0 +1,7 @@
+#!/usr/bin/env zsh
+
+if [ -f $1 ]; then
+    exec code --wait $HOME/.chezmoi_editor_workspace $1
+else
+    code --wait $1
+fi

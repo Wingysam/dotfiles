@@ -1,0 +1,31 @@
+# shellcheck disable=all
+
+function path_prepend() {
+	export PATH="$1:$PATH"
+}
+
+# These are in order of least important to most important in case of conflict.
+# For example, If I make a custom script with the same name as an npm-provided one,
+# I want my custom script to take precedence.
+path_prepend /opt/homebrew/opt/node@20/bin
+path_prepend ~/.bun/bin
+path_prepend ~/bin
+path_prepend ~/Documents/Code/Personal/bin/bin # Only exists on some of my machines, does nothing if it doesn't exist
+
+# I use Bitwarden to store my secrets. These environment variables are only populated on my personal workstations.
+# {{ if ne (env "BW_SESSION") "" }}
+export BW_SESSION="{{ env "BW_SESSION" }}"
+export CELEBRIMBOR_API_KEY="{{ (bitwarden "item" "85a8fa9b-b85e-4079-8461-334eec610e01").login.password }}"
+export GITHUB_TOKEN="{{ (bitwarden "item" "4f68cf8c-deeb-4af8-b959-554dc15cbae5").login.password }}"
+export GALAXY_FORGEJO_TOKEN="{{ (bitwarden "item" "88ad504b-2608-4810-b8b3-768b8b1f73ea").login.password }}"
+# {{ end }}
+
+# This is a bit of a departure from my "keyboard all the things"
+# tendencies, but I've found that nano is enough for me.
+# I write all of my real code in VSCode, I don't need vim for git commit messages.
+export EDITOR=nano
+
+# rokit is a toolchain manager for Roblox development.
+if [ -d "$HOME/.rokit" ]; then
+	. "$HOME/.rokit/env"
+fi
