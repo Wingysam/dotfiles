@@ -1,7 +1,6 @@
 local State = hs.loadSpoon("State")
 
 local windows = State("state/windows.json")
-local capslockBinds = {}
 
 local function characters(string)
 	local characters = {}
@@ -25,71 +24,46 @@ setmetatable(activeWindows, {
 	end,
 })
 
-local function haveMultipleOfApp(appName)
-	local count = 0
-	for key, window in pairs(windows) do
-		if string.sub(key, 1, #activeProfile + 1) == activeProfile .. "/" then
-			if window.appName == appName then
-				count = count + 1
-				if count > 1 then
-					return true
-				end
-			end
-		end
-	end
-	return false
-end
-
 local hintId = 0
-local alertUuid
-hs.hotkey.bind({}, CAPS_LOCK, function()
-	local thisHintId = hintId + 1
-	hintId = thisHintId
-	hs.timer.doAfter(1, function()
-		if hintId == thisHintId then
-			local message = table.concat(
-				hs.fnutils.map(
-					hs.fnutils.filter(KEYS, function(key)
-						return activeWindows[key]
-					end),
-					function(key)
-						local line = key .. ": " .. activeWindows[key].appName
-						if haveMultipleOfApp(activeWindows[key].appName) then
-							line = line .. " - " .. activeWindows[key].title
-						end
-						return line
-					end
-				),
-				"\n"
-			)
-			alertUuid = hs.alert.show(message, {
-				radius = 0,
-				strokeWidth = 8,
-				fadeInDuration = 0,
-				fadeOutDuration = 0,
-			}, true)
+
+local sinkKeys = {}
+local downKeys = {}
+local binds = {}
+
+downTap = hs.eventtap
+	.new({ hs.eventtap.event.types.keyDown }, function(event)
+		local keyCode = event:getKeyCode()
+		if downKeys[keyCode] then
+			return sinkKeys[keyCode]
+		end
+		downKeys[keyCode] = true
+		print(keyCode, "down")
+		local bind = binds[keyCode]
+		if bind then
+			local sink = bind(event)
+			sinkKeys[keyCode] = sink
+			return sink
 		end
 	end)
-	for _, bind in ipairs(capslockBinds) do
-		bind:enable()
-	end
-end, function()
-	hintId = hintId + 1
-	if alertUuid then
-		hs.alert.closeSpecific(alertUuid)
-		alertUuid = nil
-	end
-	for _, bind in ipairs(capslockBinds) do
-		bind:disable()
-	end
-end)
+	:start()
 
-local function capslockBind(modifiers, key, fn)
-	local bind = hs.hotkey.new(modifiers, key, function()
-		hintId = hintId + 1
-		fn()
+upTap = hs.eventtap
+	.new({ hs.eventtap.event.types.keyUp }, function(event)
+		local keyCode = event:getKeyCode()
+		downKeys[keyCode] = nil
+		sinkKeys[keyCode] = nil
 	end)
-	table.insert(capslockBinds, bind)
+	:start()
+
+local function capslockBind(key, fn)
+	local keyCode = hs.keycodes.map[key]
+	binds[keyCode] = function(event)
+		if not downKeys[CAPS_LOCK] then
+			return false
+		end
+		hintId = hintId + 1
+		return fn(event)
+	end
 end
 
 local function dumpWindow(window)
@@ -110,7 +84,7 @@ local STABLE_TITLES = {
 }
 -- Returns nil if we can't find the window to open
 -- Returns false if we shouldn't do anything
-function getWindow(windowInfo)
+local function getWindow(windowInfo)
 	-- I run several instances of some apps
 	-- that have the same bundle ID, and the IDs swap around when I reboot.
 	-- I configure them to have the same title, so I can use that to identify them.
@@ -158,37 +132,43 @@ end
 
 for _, key in ipairs(KEYS) do
 	(function(key)
-		capslockBind({ "shift" }, key, function()
-			activeProfile = key
-			windows._activeProfile = key
-		end)
-		capslockBind({ "option" }, key, function()
-			local window = hs.window.focusedWindow()
-			if not window then
-				return
+		capslockBind(key, function(event)
+			local flags = event:getFlags()
+			if flags.shift then
+				activeProfile = key
+				windows._activeProfile = key
+				return true
 			end
-			activeWindows[key] = dumpWindow(window)
-		end)
-		capslockBind({}, key, function()
+			if flags.alt then
+				local window = hs.window.focusedWindow()
+				if not window then
+					return true
+				end
+				activeWindows[key] = dumpWindow(window)
+				return true
+			end
+
 			local windowInfo = activeWindows[key]
 
 			-- That bind isn't set
 			if not windowInfo then
-				return
+				return true
 			end
 
 			local window = getWindow(windowInfo)
 			if window == false then
-				return
+				return true
 			end
 
 			if not window then
 				hs.application.launchOrFocusByBundleID(windowInfo.appId)
-				return
+				return true
 			end
 
 			window:focus()
 			activeWindows[key] = dumpWindow(window)
+
+			return true
 		end)
 	end)(key)
 end
