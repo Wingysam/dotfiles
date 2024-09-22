@@ -14,3 +14,7 @@ alias cze="EDITOR=~/.chezmoi_editor chezmoi edit"
 # If I wanted to take args or be more complex, I'd use `make-script`.
 alias cfr="curl -X POST https://celebrimbor.galaxy.casa/hooks/$CELEBRIMBOR_API_KEY/assets/full-rebuild"
 alias mm="git fetch --all && git merge origin/main"
+
+if [ -f ~/.kubectl_aliases ]; then
+    source ~/.kubectl_aliases
+fi
