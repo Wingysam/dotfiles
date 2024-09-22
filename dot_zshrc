@@ -29,6 +29,7 @@ fi
 PROMPT='%t %F{$PROMPT_COLOR}$PROMPT_USER%m%f %F{cyan}%~%f %# '
 
 # Set up my history to never lose anything and to be searchable with `hstr`
+export HISTFILE=~/.zsh_history
 export HISTSIZE=1000000000
 export SAVEHIST=1000000000
 setopt EXTENDED_HISTORY
@@ -37,3 +38,6 @@ setopt histignorespace                # skip cmds w/ leading space from history
 export HSTR_CONFIG=hicolor            # get more colors
 bindkey -s "\C-r" "\C-a hstr -- \C-j" # bind hstr to ^R
 export HSTR_TIOCSTI=y                 # TIOCSTI is an ioctl, a tool that lets hstr write to the terminal as if the user typed it
+
+# bun completions
+[ -s "~/.bun/_bun" ] && source "~/.bun/_bun"
