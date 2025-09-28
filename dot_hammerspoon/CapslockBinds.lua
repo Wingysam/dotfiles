@@ -80,7 +80,7 @@ local function dumpWindow(window)
 end
 
 local STABLE_TITLES = {
-	["dom.microsoft.VSCode"] = true,
+	["com.microsoft.VSCode"] = true,
 }
 -- Returns nil if we can't find the window to open
 -- Returns false if we shouldn't do anything
